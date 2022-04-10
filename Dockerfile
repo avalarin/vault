@@ -17,6 +17,8 @@ WORKDIR /usr/share/nginx/html
 ENV APP_BASEURL='http://localhost'
 
 COPY --from=builder /app/build .
-COPY scripts/init_env.sh /docker-entrypoint.d/
+COPY nginx/init_env.sh /docker-entrypoint.d/
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx/nginx.conf /etc/nginx/conf.d
 
 RUN chmod +x /docker-entrypoint.d/init_env.sh
