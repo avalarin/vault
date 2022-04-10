@@ -15,7 +15,7 @@ jobs:
       env:
         DOCKER_USER: ${{secrets.DOCKER_USER}}
         DOCKER_PASS: ${{secrets.DOCKER_PASS}}
-      run: docker login -u $DOCKER_USER -u $DOCKER_PASS
+      run: docker login -u $DOCKER_USER -p $DOCKER_PASS
     - name: Build
       run: docker build . --file Dockerfile --tag ${{secrets.DOCKER_USER}}/vault:latest
     - name: Push
