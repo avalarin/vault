@@ -27,7 +27,6 @@ export const DecodePage = (props: IDecodePageProps) => {
 
     const decode = () => {
         const result = props.cryptoService.decryptFromBase64(props.data, password)
-        console.log(result)
         if (result.error) {
             setError("unable to decrypt data")
             setDecryptedData("")

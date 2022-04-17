@@ -2,12 +2,14 @@ import crypto from 'crypto-js'
 
 interface IPublicData {
     v: number,
+    dt: number,
     comment: string,
     data: string
 }
 
 export interface IValidationResult {
     version: number,
+    createdAt: Date,
     valid: boolean,
     comment: string
 }
@@ -27,14 +29,14 @@ export class CryptoService implements ICryptoService {
     encryptToBase64(data: string, secret: string, comment: string): string {
         const metadata = {
             v: 1,
+            dt: Date.now(),
             comment
         }
 
         const sensetiveWords = crypto.enc.Utf8.parse(
             JSON.stringify({
                 ...metadata,
-                data,
-                dt: Date.now()
+                data
             })
         ) 
 
@@ -56,6 +58,7 @@ export class CryptoService implements ICryptoService {
             return {
                 valid: false,
                 version: 0,
+                createdAt: new Date(0),
                 comment: ""
             }
         }
@@ -63,6 +66,7 @@ export class CryptoService implements ICryptoService {
         return {
             valid: true,
             version: parsed.v,
+            createdAt: new Date(parsed.dt || 0),
             comment: parsed.comment
         }
     }

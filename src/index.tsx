@@ -9,7 +9,6 @@ const configSource = () => {
   if (!config.baseUrl) {
     config.baseUrl = window.location.origin
   }
-  console.log(config)
   return config
 }
 
