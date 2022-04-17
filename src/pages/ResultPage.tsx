@@ -10,8 +10,19 @@ export interface IResultPageProps {
     cryptoService: ICryptoService
 }
 
+function printPageArea(areaID: string){
+    var printContent = document.getElementById(areaID)
+    if (!printContent) return
+    var printWindow = window.open('', '', 'width=900,height=650')
+    if (!printWindow) return
+    printWindow.document.write(printContent.innerHTML)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+}
+
 export const ResultPage = (props: IResultPageProps) => {
-    const url = `${props.urlBase}/decrypt?data=${props.data}`
+    const url = `${props.urlBase}/qr/decrypt?data=${props.data}`
     const dataObj = props.cryptoService.validate(props.data)
 
     if (!dataObj.valid) {
@@ -29,15 +40,17 @@ export const ResultPage = (props: IResultPageProps) => {
     return <Box justify="center" align="center">
         <Card>
             <CardBody pad="medium" >
-                { dataObj.comment && <Box pad={{ bottom: 'small' }}>
-                    <Text>{dataObj.comment}</Text>
-                </Box> }
-                <Box pad={{ bottom: 'small' }}>
-                    <QRCode value={url} />
-                </Box>
+                <div id="printArea">
+                    { dataObj.comment && <Box pad={{ bottom: 'small' }}>
+                        <Text>{dataObj.comment}</Text>
+                    </Box> }
+                    <Box pad={{ bottom: 'small' }}>
+                        <QRCode value={url} />
+                    </Box>
+                </div>
                 <Box direction="row" gap="medium">
                     <Button primary label="decode" onClick={() => props.goToDecode(props.data)} />
-                    <Button primary label="print" />
+                    <Button primary label="print" onClick={() => printPageArea("printArea")} />
                 </Box>
             </CardBody>
         </Card>

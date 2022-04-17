@@ -9,8 +9,8 @@ export const AppHeader = () => {
 
     return <Header background="brand">
         <Box direction="row">
-            <Button icon={<Shield/>} label="vault" onClick={() => navigate('/new')} />
-            <Button label="new" onClick={() => navigate('/new')} />
+            <Button icon={<Shield/>} label="vault" onClick={() => navigate('/')} />
+            <Button label="new qrcode" onClick={() => navigate('/qr/new')} />
         </Box>
     </Header>
 }

@@ -39,7 +39,7 @@ export const App = (props: IAppProps) => {
         return <ResultPage
             urlBase={props.configSource().baseUrl}
             data={searchParams.get("data") || ""}
-            goToDecode={(data) => navigate(`/decrypt?data=${data}`)}
+            goToDecode={(data) => navigate(`/qr/decrypt?data=${data}`)}
             cryptoService={cryptoService}
         />
     }
@@ -48,7 +48,7 @@ export const App = (props: IAppProps) => {
         const navigate = useNavigate();
         return <EncodePage
             cryptoService={cryptoService}
-            onEncoded={(data) => navigate(`/result?data=${data}`)}
+            onEncoded={(data) => navigate(`/qr/result?data=${data}`)}
         />
     }
 
@@ -57,10 +57,10 @@ export const App = (props: IAppProps) => {
             <AppHeader />
             <Box pad="medium">
                 <Routes>
-                    <Route path="/" element={<Navigate to="/new" replace />} />
-                    <Route path="/new" element={<RenderEncoder/>} />
-                    <Route path="/decrypt" element={<RenderDecoder/>}  />
-                    <Route path="/result" element={<RenderResult/>} />
+                    <Route path="/" element={<Navigate to="/qr/new" replace />} />
+                    <Route path="/qr/new" element={<RenderEncoder/>} />
+                    <Route path="/qr/decrypt" element={<RenderDecoder/>}  />
+                    <Route path="/qr/result" element={<RenderResult/>} />
                 </Routes>
             </Box>
         </Grommet>
