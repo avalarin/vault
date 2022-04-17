@@ -4,9 +4,18 @@ import './index.css'
 import {App, IAppConfig} from './App'
 import reportWebVitals from './reportWebVitals'
 
+const configSource = () => {
+  const config = (window as any).__config as IAppConfig
+  if (!config.baseUrl) {
+    config.baseUrl = window.location.origin
+  }
+  console.log(config)
+  return config
+}
+
 ReactDOM.render(
   <React.StrictMode>
-    <App configSource={() => (window as any).__config as IAppConfig} />
+    <App configSource={configSource} />
   </React.StrictMode>,
   document.getElementById('root')
 )
