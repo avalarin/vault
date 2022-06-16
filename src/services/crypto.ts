@@ -1,18 +1,6 @@
 import crypto from 'crypto-js'
-
-interface IPublicData {
-    v: number,
-    dt: number,
-    comment: string,
-    data: string
-}
-
-export interface IValidationResult {
-    version: number,
-    createdAt: Date,
-    valid: boolean,
-    comment: string
-}
+import {Utf8} from '../utils'
+import {IContainer, ContainerV1, ContainerV2} from './container'
 
 export interface IDecryptionResult {
     error: string | null,
@@ -20,89 +8,58 @@ export interface IDecryptionResult {
 }
 
 export interface ICryptoService {
-    encryptToBase64(data: string, secret: string, comment: string): string
-    validate(data: string): IValidationResult
-    decryptFromBase64(encrypted: string, secret: string): IDecryptionResult
+    encrypt(data: string, secret: string, comment: string): IContainer
+    parse(data: string): IContainer | null
+    decrypt(encrypted: string, secret: string): IDecryptionResult
 }
 
 export class CryptoService implements ICryptoService {
-    encryptToBase64(data: string, secret: string, comment: string): string {
-        const metadata = {
-            v: 1,
-            dt: Date.now(),
-            comment
-        }
-
-        const sensetiveWords = crypto.enc.Utf8.parse(
-            JSON.stringify({
-                ...metadata,
-                data
-            })
-        ) 
-
+    encrypt(data: string, secret: string, comment: string): IContainer {
+        const sensetiveWords = Utf8.parse(data) 
+        const hash = crypto.enc.Base64.stringify(crypto.MD5(sensetiveWords))
         const encryptedStr = crypto.AES.encrypt(sensetiveWords, secret).toString()
 
-        const publicStr = JSON.stringify({
-            ...metadata,
-            data: encryptedStr
-        })
-
-        return crypto.enc.Base64.stringify(
-            crypto.enc.Utf8.parse(publicStr)
-        )
+        return ContainerV2.create(encryptedStr, comment, hash)
     }
 
-    validate(data: string): IValidationResult {
-        const parsed = this.parse(data)
-        if (parsed == null) {
-            return {
-                valid: false,
-                version: 0,
-                createdAt: new Date(0),
-                comment: ""
-            }
-        }
-
-        return {
-            valid: true,
-            version: parsed.v,
-            createdAt: new Date(parsed.dt || 0),
-            comment: parsed.comment
-        }
-    }
-
-    decryptFromBase64(encrypted: string, secret: string): IDecryptionResult {
-        const parsed = this.parse(encrypted)
-        if (parsed == null) {
+    decrypt(encrypted: string, secret: string): IDecryptionResult {
+        const container = this.parse(encrypted)
+        if (container == null) {
+            console.error(`unable to parse container`)
             return {
                 error: "invalid_data",
                 result: ""
             }
         }
-        const decryptedStr = crypto.AES.decrypt(parsed.data, secret).toString(crypto.enc.Utf8)
+
         try {
-            const decryptedObj = JSON.parse(decryptedStr)
+            const decrypted = container.decrypt(secret)
             return {
                 error: null,
-                result: decryptedObj.data
+                result: decrypted
             }
         } catch(e) {
-            console.error('Unable to decrypt data', e)
+            console.error('unable to decrypt data', e)
             return {
                 error: "invalid_secret",
                 result: ""
             }
         }
-
     }
 
-    private parse(data: string): IPublicData  | null {
+    parse(data: string): IContainer  | null {
         try {
-            return JSON.parse(crypto.enc.Utf8.stringify(
-                crypto.enc.Base64.parse(data)
-            ))
+            const raw = ContainerV2.parseRaw(data)
+            if (raw['v'] === 1) {
+                return ContainerV1.parseObject(raw)
+            } else if (raw['v'] === 2) {
+                return ContainerV2.parseObject(raw)
+            } else {
+                console.error(`unknown version ${raw['v']}`)
+                return null
+            }
         } catch(e) {
-            console.error('Unable to parse data', e)
+            console.error('unable to parse data', e)
             return null
         }
     }

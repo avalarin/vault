@@ -1,20 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
-import {App, IAppConfig} from './App'
+import {App} from './App'
 import reportWebVitals from './reportWebVitals'
-
-const configSource = () => {
-  const config = (window as any).__config as IAppConfig
-  if (!config.baseUrl) {
-    config.baseUrl = window.location.origin
-  }
-  return config
-}
+import {DefaultConfigSource} from './config'
 
 ReactDOM.render(
   <React.StrictMode>
-    <App configSource={configSource} />
+    <App configSource={DefaultConfigSource} />
   </React.StrictMode>,
   document.getElementById('root')
 )

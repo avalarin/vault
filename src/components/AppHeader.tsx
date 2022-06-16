@@ -12,5 +12,8 @@ export const AppHeader = () => {
             <Button icon={<Shield/>} label="vault" onClick={() => navigate('/')} />
             <Button label="new qrcode" onClick={() => navigate('/qr/new')} />
         </Box>
+        <Box direction="row">
+            <Button label="github" href="https://github.com/avalarin/vault" />
+        </Box>
     </Header>
 }

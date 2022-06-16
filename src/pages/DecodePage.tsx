@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Form, FormField, TextInput, Button, Box, Paragraph, Text, Grommet } from 'grommet'
-import { Message } from '../components'
+import { Form, FormField, TextInput, Button, Box, Text, Grommet } from 'grommet'
+import { Insecure } from 'grommet-icons'
+import { Message, CopyContentButton } from '../components'
 import { ICryptoService } from '../services'
 
 export interface IDecodePageProps {
@@ -16,8 +17,8 @@ export const DecodePage = (props: IDecodePageProps) => {
     const [decryptedData, setDecryptedData] = useState('')
 
     useEffect(() => {
-        const result = props.cryptoService.validate(props.data)
-        if (!result.valid) {
+        const result = props.cryptoService.parse(props.data)
+        if (!result || !result.valid) {
             setError("unable to parse data")
         } else {
             setValid(true)
@@ -26,7 +27,7 @@ export const DecodePage = (props: IDecodePageProps) => {
     }, [props.data, props.cryptoService])
 
     const decode = () => {
-        const result = props.cryptoService.decryptFromBase64(props.data, password)
+        const result = props.cryptoService.decrypt(props.data, password)
         if (result.error) {
             setError("unable to decrypt data")
             setDecryptedData("")
@@ -54,9 +55,11 @@ export const DecodePage = (props: IDecodePageProps) => {
         
         { !decryptedData && <>
             <FormField label="Password">
-                <TextInput value={password} onChange={e => setPasword(e.target.value)} />
+                <TextInput type="password" value={password} onChange={e => setPasword(e.target.value)} />
             </FormField>
-            <Button primary label="decode" onClick={decode} />
+            <Box direction="row" align="center" gap="medium" margin={{top: 'small'}}>
+                <Button primary icon={<Insecure size="small" />} label="decrypt" onClick={decode} />
+            </Box>
         </> }
 
         { decryptedData && <>
@@ -72,7 +75,7 @@ export const DecodePage = (props: IDecodePageProps) => {
                     </Grommet>
                 </Box>
             </Box>
-            <Button primary label="copy" onClick={() => {}} />
+            <CopyContentButton content={decryptedData} />
         </> }
     </Form>
 }

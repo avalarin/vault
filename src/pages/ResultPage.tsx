@@ -1,24 +1,27 @@
+import { useEffect, useState } from 'react'
 import { Card, CardBody, Box, Button, Text } from 'grommet'
+import { Print, Insecure } from 'grommet-icons'
 import QRCode from 'react-qr-code'
-import { Message } from '../components'
-import { ICryptoService } from '../services'
-import { IValidationResult } from '../services/crypto'
+import { ErrorBoundary, Message, QRCodeReliabilitySelect } from '../components'
+import { ICryptoService, IUrlService } from '../services'
+import { IContainer } from '../services/container'
+import { QRCorrectionLevelCode, QRCorrectionLevels } from '../utils/qr'
 
 export interface IResultPageProps {
-    urlBase: string,
     data: string,
-    goToDecode: (data: string) => void,
-    cryptoService: ICryptoService
+    goToDecode: (container: IContainer) => void,
+    cryptoService: ICryptoService,
+    urlService: IUrlService
 }
 
-function printQrCode(data: IValidationResult, qrCodeElementId: string){
+function printQrCode(data: IContainer, qrCodeElementId: string, size: string){
     var qrCode = document.getElementById(qrCodeElementId)
     if (!qrCode) return
 
     var printWindow = window.open('', '', 'width=900,height=650')
     if (!printWindow) return
 
-    printWindow.document.write('<div style="max-width: 256px; padding: 8px; border: dotted 1px black;">')
+    printWindow.document.write(`<div style="max-width: ${size}; padding: 8px; border: dotted 1px black;">`)
     printWindow.document.write('<div style="font-family: monospace; font-size: 14px; margin-bottom: 8px;">')
     printWindow.document.write('<span>Created on ', data.createdAt.toDateString(), '</span>')
     if (data.comment) {
@@ -32,39 +35,89 @@ function printQrCode(data: IValidationResult, qrCodeElementId: string){
     printWindow.print()
 }
 
-export const ResultPage = (props: IResultPageProps) => {
-    const url = `${props.urlBase}/qr/decrypt?data=${props.data}`
-    const dataObj = props.cryptoService.validate(props.data)
+const ErrorBox = (props: {error: any}) => <Box justify="center" align="center">
+    <Card>
+        <CardBody pad="medium" >
+            <Message type="error">
+                Error: {props.error}
+            </Message>
+        </CardBody>
+    </Card>
+</Box>
 
-    if (!dataObj.valid) {
-        return  <Box justify="center" align="center">
-            <Card>
-                <CardBody pad="medium" >
-                    <Message type="error">
-                        Error: unable to parse data
-                    </Message>
-                </CardBody>
-            </Card>
-        </Box>
+export const ResultPage = (props: IResultPageProps) => {
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [url, setUrl] = useState<string | null>(null)
+    const [container, setContainer] = useState<IContainer | null>(null)
+    const [correctionLevel, setCorrectionLevel] = useState<QRCorrectionLevelCode>('L')
+    const [maxCorrectionLevel, setMaxCorrectionLevel] = useState<QRCorrectionLevelCode>('H')
+    
+    useEffect(() => {
+        const container = props.cryptoService.parse(props.data)
+        if (!container || !container.valid) {
+            setLoading(false)
+            setError('unable to parse data')
+            return
+        }
+        
+        const url = props.urlService.formUrl(container)
+        setContainer(container)
+        setUrl(url)
+
+        const max = QRCorrectionLevels.findMaxAvailableLevel(url.length)
+        if (!max) {
+            setLoading(false)
+            setError('unable to create qr')
+            return
+        }
+
+        setMaxCorrectionLevel(max.code)
+        setCorrectionLevel(max.code)
+        setLoading(false)
+    }, [props.data, props.cryptoService, props.urlService])
+
+    if (loading) {
+        return <></>
+    }
+
+    if (error) {
+        return <ErrorBox error={error} />
+    }
+
+    if (!url || !container) {
+        throw new Error('unexpected state')
     }
 
     return <Box justify="center" align="center">
-        <Card>
-            <CardBody pad="medium" >
-                <div>
-                    <Box pad={{ bottom: 'small' }} style={{ maxWidth: '256px' }}>
-                        <Text>Created on {dataObj.createdAt.toDateString()}</Text>
-                        { dataObj.comment && <Text>Comment: {dataObj.comment}</Text> }
-                    </Box>
-                    <Box id="qrcode" pad={{ bottom: 'small' }}>
-                        <QRCode value={url} />
-                    </Box>
-                </div>
-                <Box direction="row" gap="medium">
-                    <Button primary label="decode" onClick={() => props.goToDecode(props.data)} />
-                    <Button primary label="print" onClick={() => printQrCode(dataObj, 'qrcode')} />
+        <Box>
+            <Box pad="medium">
+                <Box style={{ maxWidth: '320px' }}>
+                    <Text>Size: {url.length} bytes</Text>
+                    <QRCodeReliabilitySelect maxAvailable={maxCorrectionLevel} value={correctionLevel} onChange={setCorrectionLevel} />
                 </Box>
-            </CardBody>
-        </Card>
+            </Box>
+
+            <Card>
+                <CardBody pad="medium" >
+                    <Box style={{ maxWidth: '320px' }}>
+                        <Box pad={{ bottom: 'small' }}>
+                            <Text>Created on {container.createdAt.toDateString()}</Text>
+                            { container.comment && <Text>Comment: {container.comment}</Text> }
+                        </Box>
+                        <Box id="qrcode" pad={{ bottom: 'small' }}>
+                            <ErrorBoundary key={correctionLevel} handle={() => 'failed to render qr code'}>
+                                <QRCode size={320} level={correctionLevel} value={url} />
+                            </ErrorBoundary>
+                        </Box>
+                    </Box>
+
+                    <Box direction="row" gap="small">
+                        <Button primary icon={<Insecure size="small" />} label="decrypt" onClick={() => props.goToDecode(container)} />
+                        <Button primary icon={<Print size="small" />} label="print" onClick={() => printQrCode(container, 'qrcode', '320px')} />
+                    </Box>
+                </CardBody>
+            </Card>
+        </Box>
     </Box>
 }
