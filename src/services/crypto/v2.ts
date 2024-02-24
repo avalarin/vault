@@ -1,6 +1,6 @@
 import crypto from 'crypto-js'
-import {Utf8} from '../../utils'
-import {IContainer} from './interface'
+import { Utf8 } from '../../utils'
+import { IContainer } from './interface'
 
 export class ContainerV2 implements IContainer {
     public version: number = 2

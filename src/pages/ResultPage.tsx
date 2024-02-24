@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Card, CardBody, Box, Button, Text } from 'grommet'
-import { Print, Insecure } from 'grommet-icons'
+import { Print, Insecure, Next } from 'grommet-icons'
 import QRCode from 'react-qr-code'
 import { ErrorBoundary, Message, QRCodeReliabilitySelect } from '../components'
-import { ICryptoService, IUrlService } from '../services'
-import { IContainer } from '../services/container'
+import { ICryptoService } from '../services/crypto'
+import { IUrlService } from '../services'
+import { IContainer } from '../services/crypto'
 import { QRCorrectionLevelCode, QRCorrectionLevels } from '../utils/qr'
 
 export interface IResultPageProps {
     data: string,
     goToDecode: (container: IContainer) => void,
+    goToUsage?: ((container: IContainer) => void) | null,
     cryptoService: ICryptoService,
     urlService: IUrlService
 }
@@ -54,7 +56,7 @@ export const ResultPage = (props: IResultPageProps) => {
     const [maxCorrectionLevel, setMaxCorrectionLevel] = useState<QRCorrectionLevelCode>('H')
     
     useEffect(() => {
-        const container = props.cryptoService.parse(props.data)
+        const container = props.cryptoService.parseContainer(props.data, 'base64')
         if (!container || !container.valid) {
             setLoading(false)
             setError('unable to parse data')
@@ -115,6 +117,9 @@ export const ResultPage = (props: IResultPageProps) => {
                     <Box direction="row" gap="small">
                         <Button primary icon={<Insecure size="small" />} label="decrypt" onClick={() => props.goToDecode(container)} />
                         <Button primary icon={<Print size="small" />} label="print" onClick={() => printQrCode(container, 'qrcode', '320px')} />
+                        { props.goToUsage && 
+                            <Button primary icon={<Next size="small" />} label="next" onClick={() => props.goToUsage!(container)} />
+                        }
                     </Box>
                 </CardBody>
             </Card>

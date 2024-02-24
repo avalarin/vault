@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Form, FormField, TextInput, Button, Box, Text, Grommet } from 'grommet'
 import { Insecure } from 'grommet-icons'
 import { Message, CopyContentButton } from '../components'
-import { ICryptoService } from '../services'
+import { ICryptoService, IDecryptionResult, ParseAndDecryptUseCase, Password } from '../services/crypto'
 
 export interface IDecodePageProps {
     data: string,
@@ -10,6 +10,8 @@ export interface IDecodePageProps {
 }
 
 export const DecodePage = (props: IDecodePageProps) => {
+    const parseAndDecrypt = useMemo(() => new ParseAndDecryptUseCase(props.cryptoService), [props.cryptoService])
+
     const [error, setError] = useState<string | null>(null)
     const [valid, setValid] = useState(false)
     const [comment, setComment] = useState('')
@@ -17,7 +19,7 @@ export const DecodePage = (props: IDecodePageProps) => {
     const [decryptedData, setDecryptedData] = useState('')
 
     useEffect(() => {
-        const result = props.cryptoService.parse(props.data)
+        const result = props.cryptoService.parseContainer(props.data, 'base64')
         if (!result || !result.valid) {
             setError("unable to parse data")
         } else {
@@ -27,14 +29,28 @@ export const DecodePage = (props: IDecodePageProps) => {
     }, [props.data, props.cryptoService])
 
     const decode = () => {
-        const result = props.cryptoService.decrypt(props.data, password)
-        if (result.error) {
-            setError("unable to decrypt data")
-            setDecryptedData("")
-        } else {
-            setError(null)
-            setDecryptedData(result.result)
-        }
+        (async () => {
+            let result: IDecryptionResult
+            try {
+                result = await parseAndDecrypt.do({
+                    container: props.data,
+                    format: 'base64',
+                    secret: new Password(password)
+                 })
+            } catch (e) {
+                console.error(e)
+                setError("unable to decrypt data")
+                setDecryptedData("")
+                return
+            }
+            if (result.error) {
+                setError("unable to decrypt data")
+                setDecryptedData("")
+            } else {
+                setError(null)
+                setDecryptedData(result.result)
+            }
+        })()
     }
 
     if (!valid && error) {

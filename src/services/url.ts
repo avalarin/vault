@@ -1,5 +1,5 @@
-import {IContainer} from './container/interface'
-import {ConfigSource} from '../config'
+import { IContainer } from './crypto/interface'
+import { ConfigSource } from '../config'
 
 export interface IUrlService {
     formUrl(container: IContainer): string

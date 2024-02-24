@@ -7,6 +7,7 @@ RUN npm install
 COPY public ./public
 COPY src ./src
 COPY tsconfig.json .
+COPY config-overrides.js .
 RUN ls -l
 
 RUN npm run build

@@ -1,5 +1,11 @@
 export interface IAppConfig {
     baseUrl: string
+
+    googleApi: IGoogleApiConfig
+}
+
+export interface IGoogleApiConfig {
+  clientId: string
 }
 
 export type ConfigSource = () => IAppConfig 
